@@ -1,37 +1,60 @@
-import Head from 'next/head'
 import styles from './index.module.scss'
-import { useState } from 'react'
+import { useState, createRef } from 'react'
 const axios = require('axios').default;
-
-
-import {motion, AnimatePresence} from 'framer-motion'
-
+import { motion, AnimatePresence } from 'framer-motion'
 import { MediaSocialBox } from '../components/MediaSocialBox';
+import ReCAPTCHA from 'react-google-recaptcha'
 
 export default function Home() {
 
+  var [tokenCaptcha, setCaptcha] = useState(null)
   var [data, setData] = useState(null)
+  var reRef = createRef()
 
-  const handleClick = async () => {
+  const handlePost = async () => {
     setData("loading")
-    axios.get("https://serverless-function-kaenova.herokuapp.com/").then(res =>{
-      console.log(res.data)
-      setInterval(() => {
-        setData(res.data.Data)
-      }, 2000)
+    axios.get(process.env.SERVERLESS_FUNCTION_HOST + "?token=" + tokenCaptcha).then(res => {
+      const data = res.data.Data
+
+      // Tidak valid
+      if (data.status != 200) {
+        setData("not valid")
+      } else {
+        console.log(res.data)
+        setInterval(() => {
+          setData(res.data.Data)
+        }, 2000)
+      }
     }).catch(e => {
       setData("error")
     })
   }
 
+  const handleSubmit = (evt) => {
+    evt.preventDefault();
+    reRef.current.execute()
+    // handleClick()
+  }
+
+  const captcha = (captchaCode) => {
+    console.log(captchaCode)
+    if (!captchaCode) {
+      setData("not valid")
+    } else {
+      setCaptcha(captchaCode)
+      handlePost()
+    }
+    reRef.current.reset()
+  }
+
   const apiMessage = () => {
-    if (data == null){
-      return <> </> 
-    }else if (data == "error") {
+    if (data == null) {
+      return <> </>
+    } else if (data == "error") {
       return (
         <>
-        <p>Error while fetching</p>
-        <p>Server Error</p>
+          <p>Error while fetching</p>
+          <p>Server Error</p>
         </>
       )
     } else if (data == "loading") {
@@ -94,80 +117,102 @@ export default function Home() {
           </motion.div>
         </div>
       )
+
+    } else if (data == "not valid") {
+      return (
+        <p>
+          not valid because of reCaptcha, please refresh the page
+        </p>
+      )
+
     } else {
       return (
         <>
-        <p>
-          Success with data
-        </p>
-        <p>
-          {data}
-        </p>
-        <p>
-          You can check in the console log <br/> and the network tabs on developer tools
-        </p>
+          <p>
+            Success with data
+          </p>
+          <p>
+            {data}
+          </p>
+          <p>
+            You can check in the console log <br /> and the network tabs on developer tools
+          </p>
         </>
       )
     }
   }
 
-
-
   return (
-    <div className={styles.main_container}>
-      <div>
-        <h1>
-          KMA
-        </h1>
-        <p>
-          This is just an example of serverless website <br />
-          with a serverless function
-        </p>
-        <p>
-          See <a href="https://github.com/kaenova/serverless-arch">this project</a> on Github
-        </p>
-        <p className="text-sm mt-3">
-          Follow Me!
-        </p>
+    <>
+      <div className={styles.main_container}>
         <div>
-        <MediaSocialBox icon="github" href="https://github.com/kaenova" />
-        <MediaSocialBox icon="linkedin" href="https://www.linkedin.com/in/kaenova/" />
-        <MediaSocialBox icon="twitter" href="https://twitter.com/i/events/1275477348419170317" />
+          <h1>
+            KMA
+          </h1>
+          <p>
+            This is just an example of serverless website <br />
+            with a serverless function
+          </p>
+          <p>
+            See <a href="https://github.com/kaenova/serverless-arch">this project</a> on Github
+          </p>
+          <p className="text-sm mt-3">
+            Follow Me!
+          </p>
+          <div>
+            <MediaSocialBox icon="github" href="https://github.com/kaenova" />
+            <MediaSocialBox icon="linkedin" href="https://www.linkedin.com/in/kaenova/" />
+            <MediaSocialBox icon="twitter" href="https://twitter.com/i/events/1275477348419170317" />
+          </div>
         </div>
-      </div>
 
-      <motion.button type="button" onClick={handleClick}
-        whileHover={{
-          scale: 1.05
-        }}
-        whileTap={{
-          scale: 0.95
-        }}
-      >
-        Press this
-      </motion.button>
-
-      <AnimatePresence>
-      { data != null &&
-        <motion.div className={styles.result}
-          initial={{
-            opacity:0,
-            y: "2em"
-          }}
-          animate={{
-            opacity:1,
-            y:0
-          }}
-          exit={{
-            opacity:0,
-            y: "2em"
-          }}
-          
+        <form method="post"
+          onSubmit={handleSubmit}
         >
-          {apiMessage()}
-        </motion.div>
-      }
-      </AnimatePresence>
-    </div>
+
+          <ReCAPTCHA sitekey={process.env.RECAPTCHA_CLIENT}
+            ref={reRef}
+            size="invisible"
+            onChange={captcha}
+          />
+
+          <motion.button type="submit"
+            whileHover={{
+              scale: 1.05
+            }}
+            whileTap={{
+              scale: 0.95
+            }}
+          >
+            Press this
+          </motion.button>
+
+        </form>
+
+
+
+        <AnimatePresence>
+          {data != null &&
+            <motion.div className={styles.result}
+              initial={{
+                opacity: 0,
+                y: "2em"
+              }}
+              animate={{
+                opacity: 1,
+                y: 0
+              }}
+              exit={{
+                opacity: 0,
+                y: "2em"
+              }}
+
+            >
+              {apiMessage()}
+            </motion.div>
+          }
+        </AnimatePresence>
+      </div>
+    </>
   )
 }
