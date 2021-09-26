@@ -7,17 +7,16 @@ import ReCAPTCHA from 'react-google-recaptcha'
 
 export default function Home() {
 
-  var [tokenCaptcha, setCaptcha] = useState(null)
   var [data, setData] = useState(null)
   var reRef = createRef()
 
-  const handlePost = async () => {
+  const handlePost = async (captchaCode) => {
     setData("loading")
-    axios.get(process.env.SERVERLESS_FUNCTION_HOST + "?token=" + tokenCaptcha).then(res => {
-      const data = res.data.Data
-
+    var url = process.env.SERVERLESS_FUNCTION_HOST + "?token=" + captchaCode
+    axios.get(url).then(res => {
+      const dataFetch = res.data
       // Tidak valid
-      if (data.status != 200) {
+      if (dataFetch.Status != 200) {
         setData("not valid")
       } else {
         console.log(res.data)
@@ -37,12 +36,10 @@ export default function Home() {
   }
 
   const captcha = (captchaCode) => {
-    console.log(captchaCode)
-    if (!captchaCode) {
+    if (captchaCode == null) {
       setData("not valid")
     } else {
-      setCaptcha(captchaCode)
-      handlePost()
+      handlePost(captchaCode)
     }
     reRef.current.reset()
   }
