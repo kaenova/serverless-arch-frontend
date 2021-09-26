@@ -167,7 +167,7 @@ export default function Home() {
           onSubmit={handleSubmit}
         >
 
-          <ReCAPTCHA sitekey={process.env.RECAPTCHA_CLIENT}
+          <ReCAPTCHA sitekey="6LcQKZAcAAAAAMMNMNejM69LG_X3aEapzhvgoqok"
             ref={reRef}
             size="invisible"
             onChange={captcha}
