@@ -12,7 +12,7 @@ export default function Home() {
 
   const handlePost = async (captchaCode) => {
     setData("loading")
-    var url = process.env.SERVERLESS_FUNCTION_HOST + "?token=" + captchaCode
+    var url = "https://serverless-function-kaenova.herokuapp.com/?token=" + captchaCode
     axios.get(url).then(res => {
       const dataFetch = res.data
       // Tidak valid
